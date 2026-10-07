@@ -104,7 +104,7 @@ export default function Crash() {
     return (
       <Screen orbs="a" nav={false}>
         <div className="row" style={{ gap: 10 }}>
-          <div className="lp">L</div>
+          <div className="lp" />
           <span className="eye">Learner’s licence · test 1</span>
         </div>
         <div className="col" style={{ gap: 12, marginTop: 28 }}>
@@ -173,7 +173,7 @@ export default function Crash() {
         <div className="foot nonav">
           {held ? (
             <Link className="btn" href={state.onboarded ? '/profile' : '/welcome'}>
-              <span className="lp inbtn">L</span>Get my L-plate
+              <span className="lp inbtn" />Get my L-plate
             </Link>
           ) : (
             <button className="btn" onClick={restart}><Icon name="refresh" />Replay and hold this time</button>

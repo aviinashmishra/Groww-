@@ -31,7 +31,7 @@ export function licence(s: State) {
   return { level, crash, six, months, rw };
 }
 
-export const LEVEL_NAME = ['No licence yet', 'Level 1 · L-plate', 'Level 2 · Stocks', 'Level 3 · F&O'];
+export const LEVEL_NAME = ['No licence yet', 'Level 1 · L-plate', 'Level 2 · Fun Pot', 'Level 3 · F&O'];
 
 export function funValue(s: State, at = new Date()) {
   const held = s.fun.holdings.reduce((a, h) => {

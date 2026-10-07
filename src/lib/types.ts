@@ -1,3 +1,5 @@
+import type { InvestState } from './invest';
+
 export type PersonaId = 'salary' | 'student' | 'irregular';
 export type Bucket = 'soon' | 'later' | 'never';
 export type Language = 'en' | 'hinglish' | 'hi' | 'mr';
@@ -111,9 +113,19 @@ export interface Wish {
   potId?: string;
 }
 
+export interface OwnNumbers {
+  income: number;
+  spend: number;
+  savings: number;
+}
+
 export interface State {
   v: 1;
   onboarded: boolean;
+  /** True when the profile runs on sample data rather than the user's own numbers. */
+  sample: boolean;
+  /** Avatar colour, one of AVATAR_COLORS. */
+  avatar: string;
   persona: PersonaId;
   name: string;
   joinedAt: string;
@@ -151,5 +163,15 @@ export interface State {
   /** Money mood, 1 (stressed) to 5 (in control), one per day. */
   moods: { day: string; mood: number }[];
   wishes: Wish[];
-  settings: { hideAmounts: boolean; theme: ThemePref; lite: boolean; language: Language };
+  settings: {
+    hideAmounts: boolean;
+    theme: ThemePref;
+    lite: boolean;
+    language: Language;
+    haptics: boolean;
+    /** Optional app lock: SHA-256 of salt + PIN. */
+    lock: { hash: string; salt: string } | null;
+  };
+  /** Wallet, stocks, mutual funds, SIPs and IPOs. */
+  invest: InvestState;
 }

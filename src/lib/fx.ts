@@ -6,8 +6,16 @@ export function reducedMotion(): boolean {
   return typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 }
 
+let hapticsOn = true;
+
+/** Follows the user's Vibration setting. */
+export function setHaptics(on: boolean) {
+  hapticsOn = on;
+}
+
 /** Short haptic tick on phones that support it. */
 export function buzz(pattern: number | number[] = 12) {
+  if (!hapticsOn) return;
   try {
     if (typeof navigator !== 'undefined' && 'vibrate' in navigator) navigator.vibrate(pattern);
   } catch {

@@ -86,8 +86,7 @@ export default function Fun() {
                 <button
                   className="chip"
                   onClick={() => {
-                    update((d) => { d.fun.holdings = d.fun.holdings.filter((x) => x.id !== h.id); d.fun.cash += Math.round(value); });
-                    toast(`Sold ${s.name} for ${rupees(value)}`);
+                    update((d) => { d.fun.holdings = d.fun.holdings.filter((x) => x.id !== h.id); d.fun.cash += Math.round(value); }, `Sold ${s.name} for ${rupees(value)}`);
                   }}
                 >
                   Sell

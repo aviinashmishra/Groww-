@@ -42,8 +42,7 @@ export default function Split() {
       d.lastSplitMonth = monthKey();
       d.monthlyIncome = total;
       note(d, `Split done: ${rupees(allocated)} into pots`, `${rupees(spend)} left for spending this month.`, '/');
-    });
-    toast(`${rupees(allocated)} split into your pots`);
+    }, `${rupees(allocated)} split into your pots`);
     router.push('/');
   };
 

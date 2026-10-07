@@ -2,24 +2,34 @@
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
-import type { PersonaId, State, ThemePref } from './types';
+import type { OwnNumbers, PersonaId, State, ThemePref } from './types';
 import { createState } from './data';
 import { needsSettle, note, potsTotal, settle } from './logic';
+import { ensureInvest, investDue, settleInvest } from './invest';
 import { DICT, LANG_ATTR } from './i18n';
 import { STICKERS, earnedIds } from './stickers';
-import { buzz, revealTheme } from './fx';
+import { buzz, revealTheme, setHaptics } from './fx';
 import { localDay, uid } from './format';
+import { hashPin, RELOCK_MS } from './lock';
 import { Celebration, type Cheer } from '@/components/Celebration';
+import { LockScreen } from '@/components/LockScreen';
 
 const KEY = 'gz-state-v1';
 
+interface ToastAction { label: string; run: () => void }
+
 interface Ctx {
   state: State;
-  update: (recipe: (draft: State) => void) => void;
-  reset: (persona: PersonaId, name?: string, onboarded?: boolean) => void;
-  toast: (msg: string) => void;
+  /** Apply a change. Pass `undo` to show a toast with an Undo button that restores the state before it. */
+  update: (recipe: (draft: State) => void, undo?: string) => void;
+  reset: (persona: PersonaId, name?: string, onboarded?: boolean, own?: OwnNumbers) => void;
+  toast: (msg: string, action?: ToastAction) => void;
   celebrate: (c: Omit<Cheer, 'id'>) => void;
   setTheme: (theme: ThemePref, origin?: { x: number; y: number }) => void;
+  exportBackup: () => string;
+  importBackup: (text: string) => boolean;
+  erase: () => void;
+  lockNow: () => void;
   t: (typeof DICT)['en'];
 }
 
@@ -41,7 +51,9 @@ function prepare(s: State): State {
   const out: State = { ...base, ...s, settings: { ...base.settings, ...s.settings } };
   if (!Array.isArray(s.stickers)) out.stickers = earnedIds(out);
   if (!Array.isArray(s.snapshots)) out.snapshots = [];
+  out.invest = ensureInvest(out);
   if (needsSettle(out)) settle(out);
+  if (investDue(out)) settleInvest(out);
   snapshot(out);
   return out;
 }
@@ -55,12 +67,21 @@ function snapshot(d: State) {
   d.snapshots = d.snapshots.slice(-60);
 }
 
+function isState(x: unknown): x is State {
+  const s = x as State;
+  return !!s && s.v === 1 && Array.isArray(s.pots) && typeof s.monthlySpend === 'number' && typeof s.persona === 'string';
+}
+
 export function StoreProvider({ children }: { children: ReactNode }) {
   const [state, setState] = useState<State | null>(null);
-  const [toastMsg, setToastMsg] = useState<string | null>(null);
+  const [toastMsg, setToastMsg] = useState<{ msg: string; action?: ToastAction } | null>(null);
   const [cheers, setCheers] = useState<Cheer[]>([]);
+  const [locked, setLocked] = useState(false);
   const toastTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const cheered = useRef(new Set<string>());
+  const hiddenAt = useRef<number | null>(null);
+  const stateRef = useRef<State | null>(null);
+  stateRef.current = state;
   const router = useRouter();
   const pathname = usePathname();
 
@@ -70,13 +91,15 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     try {
       const raw = localStorage.getItem(KEY);
       if (raw) {
-        const parsed = JSON.parse(raw) as State;
-        if (parsed && parsed.v === 1) loaded = parsed;
+        const parsed = JSON.parse(raw);
+        if (isState(parsed)) loaded = parsed;
       }
     } catch {
       /* storage blocked: start fresh */
     }
-    setState(prepare(structuredClone(loaded ?? createState('salary'))));
+    const s = prepare(structuredClone(loaded ?? createState('salary')));
+    if (s.settings.lock && s.onboarded) setLocked(true);
+    setState(s);
   }, []);
 
   // Persist.
@@ -89,18 +112,37 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     }
   }, [state]);
 
-  // Pending credits invest themselves at 6 pm.
+  // Ask the browser not to evict this app's storage.
+  useEffect(() => {
+    if (state?.onboarded) navigator.storage?.persist?.().catch(() => {});
+  }, [state?.onboarded]);
+
+  // Pending credits invest themselves at 6 pm; orders fill, SIPs run, units get allotted.
   useEffect(() => {
     const id = setInterval(() => {
       setState((prev) => {
-        if (!prev || !needsSettle(prev)) return prev;
+        if (!prev) return prev;
+        const credits = needsSettle(prev);
+        const invest = investDue(prev);
+        if (!credits && !invest) return prev;
         const d = structuredClone(prev);
-        settle(d);
+        if (credits) settle(d);
+        if (invest) settleInvest(d);
         snapshot(d);
         return d;
       });
-    }, 20000);
+    }, 5000);
     return () => clearInterval(id);
+  }, []);
+
+  // Relock after time in the background.
+  useEffect(() => {
+    const onVis = () => {
+      if (document.hidden) hiddenAt.current = Date.now();
+      else if (hiddenAt.current && Date.now() - hiddenAt.current > RELOCK_MS && stateRef.current?.settings.lock) setLocked(true);
+    };
+    document.addEventListener('visibilitychange', onVis);
+    return () => document.removeEventListener('visibilitychange', onVis);
   }, []);
 
   // New stickers: record them, note them, and celebrate each once.
@@ -129,10 +171,11 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     ]);
   }, [state]);
 
-  // Theme, lite mode and language on <html>.
+  // Theme, lite mode, language and haptics.
   const theme = state?.settings.theme;
   const lite = state?.settings.lite;
   const lang = state?.settings.language;
+  const haptics = state?.settings.haptics;
   useEffect(() => {
     if (!theme) return;
     const root = document.documentElement;
@@ -141,7 +184,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       root.dataset.theme = resolveTheme(theme);
       root.dataset.lite = String(!!lite);
       const meta = document.querySelector('meta[name="theme-color"]:not([media])') ?? Object.assign(document.head.appendChild(document.createElement('meta')), { name: 'theme-color' });
-      meta.setAttribute('content', root.dataset.theme === 'dark' ? '#0A1012' : '#ECF0F0');
+      meta.setAttribute('content', root.dataset.theme === 'dark' ? '#0A1012' : '#F4F8F7');
       try {
         localStorage.setItem('gz-theme', JSON.stringify({ theme, lite: !!lite }));
       } catch {
@@ -155,6 +198,9 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (lang) document.documentElement.lang = LANG_ATTR[lang];
   }, [lang]);
+  useEffect(() => {
+    setHaptics(haptics !== false);
+  }, [haptics]);
 
   // Onboarding guard.
   useEffect(() => {
@@ -163,31 +209,43 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     }
   }, [state, pathname, router]);
 
-  const update = useCallback((recipe: (draft: State) => void) => {
+  const toast = useCallback((msg: string, action?: ToastAction) => {
+    setToastMsg({ msg, action });
+    buzz(8);
+    clearTimeout(toastTimer.current);
+    toastTimer.current = setTimeout(() => setToastMsg(null), action ? 6000 : 3200);
+  }, []);
+
+  const update = useCallback((recipe: (draft: State) => void, undo?: string) => {
+    let before: State | null = null;
     setState((prev) => {
       if (!prev) return prev;
+      before = prev;
       const d = structuredClone(prev);
       recipe(d);
       snapshot(d);
       return d;
     });
-  }, []);
+    if (undo) {
+      toast(undo, {
+        label: 'Undo',
+        run: () => {
+          if (before) setState(before);
+          setToastMsg(null);
+          buzz([6, 30, 6]);
+        },
+      });
+    }
+  }, [toast]);
 
-  const reset = useCallback((persona: PersonaId, name?: string, onboarded = true) => {
+  const reset = useCallback((persona: PersonaId, name?: string, onboarded = true, own?: OwnNumbers) => {
     setState((prev) => {
-      const next = createState(persona, name, onboarded);
+      const next = createState(persona, name, onboarded, own);
       if (prev) next.settings = { ...prev.settings };
       next.stickers = earnedIds(next);
       snapshot(next);
       return next;
     });
-  }, []);
-
-  const toast = useCallback((msg: string) => {
-    setToastMsg(msg);
-    buzz(8);
-    clearTimeout(toastTimer.current);
-    toastTimer.current = setTimeout(() => setToastMsg(null), 3200);
   }, []);
 
   const celebrate = useCallback((c: Omit<Cheer, 'id'>) => setCheers((q) => [...q, { ...c, id: uid() }]), []);
@@ -205,16 +263,64 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     buzz(10);
   }, []);
 
+  const exportBackup = useCallback(() => JSON.stringify({ app: 'groww-genz', exportedAt: new Date().toISOString(), state: stateRef.current }, null, 2), []);
+
+  const importBackup = useCallback((text: string) => {
+    try {
+      const parsed = JSON.parse(text);
+      const s = parsed?.state ?? parsed;
+      if (!isState(s)) return false;
+      const next = prepare(structuredClone(s));
+      next.onboarded = true;
+      cheered.current = new Set(next.stickers);
+      setState(next);
+      return true;
+    } catch {
+      return false;
+    }
+  }, []);
+
+  const erase = useCallback(() => {
+    try {
+      localStorage.removeItem(KEY);
+      localStorage.removeItem('gz-theme');
+    } catch {
+      /* ignore */
+    }
+    cheered.current = new Set();
+    setCheers([]);
+    setLocked(false);
+    setState(createState('salary'));
+    router.replace('/welcome');
+  }, [router]);
+
+  const lockNow = useCallback(() => setLocked(true), []);
+
   const value = useMemo<Ctx | null>(
-    () => (state ? { state, update, reset, toast, celebrate, setTheme, t: DICT[state.settings.language] } : null),
-    [state, update, reset, toast, celebrate, setTheme],
+    () => (state ? { state, update, reset, toast, celebrate, setTheme, exportBackup, importBackup, erase, lockNow, t: DICT[state.settings.language] } : null),
+    [state, update, reset, toast, celebrate, setTheme, exportBackup, importBackup, erase, lockNow],
   );
 
   if (!value) {
     return (
       <div className="splash" aria-busy="true" aria-label="Loading">
-        <div className="lp">L</div>
+        <div className="lp" />
       </div>
+    );
+  }
+
+  if (locked && value.state.settings.lock) {
+    const lock = value.state.settings.lock;
+    return (
+      <LockScreen
+        name={value.state.name}
+        onUnlock={async (pin) => {
+          const ok = (await hashPin(lock.salt, pin)) === lock.hash;
+          if (ok) { setLocked(false); buzz(12); }
+          return ok;
+        }}
+        onForgot={erase}
+      />
     );
   }
 
@@ -225,14 +331,17 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     <StoreCtx.Provider value={value}>
       {blocked ? (
         <div className="splash" aria-busy="true">
-          <div className="lp">L</div>
+          <div className="lp" />
         </div>
       ) : (
         children
       )}
       {toastMsg && (
-        <div className="toast" role="status" aria-live="polite">
-          {toastMsg}
+        <div className={`toast${toastMsg.action ? ' has-action' : ''}`} role="status" aria-live="polite">
+          <span>{toastMsg.msg}</span>
+          {toastMsg.action && (
+            <button type="button" className="toast-act" onClick={toastMsg.action.run}>{toastMsg.action.label}</button>
+          )}
         </div>
       )}
       {cheer && (

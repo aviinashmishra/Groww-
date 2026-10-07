@@ -33,7 +33,7 @@ export default function Odds() {
       <p className="cap">Source: SEBI study of individual F&amp;O traders. We’ll show you this again every time, in the same size.</p>
 
       <div className="foot nonav">
-        <Link className="btn" href="/fun"><span className="lp inbtn">L</span>Stay on stocks</Link>
+        <Link className="btn" href="/fun"><span className="lp inbtn" />Stay on stocks</Link>
         <Link className="ghost" href="/fun/unlock">I still want to unlock F&amp;O</Link>
       </div>
     </Screen>

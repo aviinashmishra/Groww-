@@ -136,9 +136,8 @@ export default function Jar() {
           className="btn"
           disabled={jar.balance < 1}
           onClick={() => {
-            update((d) => { sweepJar(d); });
+            update((d) => { sweepJar(d); }, `Swept into ${never?.name ?? 'Never touch'}`);
             jiggle();
-            toast(`Swept into ${never?.name ?? 'Never touch'}`);
           }}
         >
           <Icon name="jar" />{jar.balance < 1 ? 'Jar’s empty, spend something' : `Sweep ${state.settings.hideAmounts ? 'it' : rupees(Math.floor(jar.balance))} into ${never?.name ?? 'Never touch'}`}
@@ -172,7 +171,7 @@ function SpendSheet({ onClose, onAdded }: { onClose: () => void; onAdded: () => 
       <button
         className="btn"
         disabled={n <= 0 || !what.trim()}
-        onClick={() => { update((d) => { addSpend(d, what.trim(), n, cat); }); toast(r > 0 ? `+${rupees(r)} in the jar` : 'Spend logged'); onAdded(); onClose(); }}
+        onClick={() => { update((d) => { addSpend(d, what.trim(), n, cat); }, r > 0 ? `+${rupees(r)} in the jar` : 'Spend logged'); onAdded(); onClose(); }}
       >
         Log {n > 0 ? rupees(n) : ''}
       </button>

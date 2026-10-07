@@ -51,6 +51,10 @@ const PATHS = {
   search: (<><circle cx="11" cy="11" r="6.5" /><path d="M20 20l-4.2-4.2" /></>),
   heart: <path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10z" />,
   receipt: (<><path d="M6 3h12v18l-3-2-3 2-3-2-3 2z" /><path d="M9 8h6M9 12h6" /></>),
+  wallet: (<><path d="M4 7a2 2 0 0 1 2-2h11v4" /><rect x="4" y="7" width="16" height="12" rx="2.5" /><path d="M16 13h4" /><circle cx="16" cy="13" r=".6" /></>),
+  pie: (<><path d="M12 3a9 9 0 1 0 9 9h-9z" /><path d="M15 3.5A9 9 0 0 1 20.5 9H15z" /></>),
+  rocket: (<><path d="M14 4c3 0 6 3 6 6l-7 7-6-6 7-7z" /><path d="M7 11l-3 1 2 2M13 17l-1 3-2-2M15.5 8.5h.01" /></>),
+  bank: <path d="M4 10l8-5 8 5M5 10v8M9.5 10v8M14.5 10v8M19 10v8M3 20h18" />,
 } satisfies Record<string, ReactNode>;
 
 export type IconName = keyof typeof PATHS;

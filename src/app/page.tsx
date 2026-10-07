@@ -9,10 +9,12 @@ import { ThemeToggle } from '@/components/Theme';
 import { WhatIfSheet } from '@/components/WhatIf';
 import { useCountUp } from '@/lib/fx';
 import { MoodCheckIn } from '@/components/Mood';
+import { InvestCard } from '@/components/Invest';
+import { forYou, greeting } from '@/lib/foryou';
 import { useStore } from '@/lib/store';
 import { BUCKET_LABEL } from '@/lib/data';
 import { potsTotal, runway, twin } from '@/lib/logic';
-import { fmtDay, monthKey, parseAmount, relDay, rupees, uid } from '@/lib/format';
+import { monthKey, parseAmount, relDay, rupees, uid } from '@/lib/format';
 import type { Bucket } from '@/lib/types';
 
 const POT_ICON: Record<Bucket, IconName> = { soon: 'clock', later: 'calendar', never: 'lock' };
@@ -31,15 +33,9 @@ export default function Home() {
   const shownRunway = useCountUp(rw.value);
 
   const lastIncome = state.credits.find((c) => c.kind === 'income');
-  const caption = hidden
-    ? 'Amounts hidden'
-    : state.persona === 'salary'
-      ? `Salary lands on the 1st · ${fmtDay(new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString())}`
-      : state.persona === 'irregular' && lastIncome
-        ? `${rupees(lastIncome.amount)} landed ${relDay(lastIncome.at)}`
-        : state.persona === 'irregular'
-          ? 'Whatever lands, whenever'
-          : 'No salary, no problem';
+  const first = state.name.trim().split(' ')[0];
+  const caption = hidden ? `Amounts hidden · ${greeting()}, ${first}` : `${greeting()}, ${first}`;
+  const nudge = forYou(state);
 
   const splitDone = state.lastSplitMonth === monthKey();
   const irregularSlice = Math.max(100, Math.round(((lastIncome?.amount ?? 8500) * state.lands.share) / 100));
@@ -65,6 +61,12 @@ export default function Home() {
           )}
         </div>
       </header>
+
+      <Link href={nudge.href} className="foryou" key={nudge.key}>
+        <span className="ficon"><Icon name={nudge.icon} /></span>
+        <span className="col grow" style={{ gap: 2 }}><span className="eye">For you · {nudge.eyebrow}</span><span style={{ fontWeight: 700, fontSize: 15.5, lineHeight: 1.3 }}>{nudge.title}</span></span>
+        <Icon name="chevR" />
+      </Link>
 
       <section className="glass col" style={{ alignItems: 'center', gap: 12 }}>
         <button className="ringbtn" onClick={() => setWhatIfOpen(true)} aria-label={`Runway ${rw.display} ${rw.unit}. Open the what-if planner`}>
@@ -108,6 +110,8 @@ export default function Home() {
         ))}
       </section>
 
+      <InvestCard />
+
       <MoodCheckIn />
 
       <section className="col" style={{ gap: 8 }}>
@@ -122,7 +126,7 @@ export default function Home() {
 
         {state.crash.held !== true && (
           <Link href="/crash" className="glass row" style={{ padding: '12px 16px' }}>
-            <div className="lp">L</div>
+            <div className="lp" />
             <div className="col grow"><span className="eye">Learner’s licence</span><span className="med">Survive a fake crash, 90 seconds</span></div>
             <Icon name="chevR" style={{ color: 'var(--ink3)' }} />
           </Link>

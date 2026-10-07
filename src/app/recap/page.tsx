@@ -253,7 +253,7 @@ export default function Recap() {
           ))}
         </div>
         <div className="row sp" style={{ position: 'relative', zIndex: 3, marginTop: 12 }}>
-          <span className="row" style={{ gap: 8 }}><span className="lp" style={{ width: 28, height: 28, fontSize: 15, borderRadius: 8, borderColor: '#F0F5F4', background: 'transparent', color: '#F0F5F4' }}>L</span><span className="eye" style={{ color: 'rgba(240,245,244,.8)' }}>Your week</span></span>
+          <span className="row" style={{ gap: 8 }}><span className="lp" style={{ width: 28, height: 28 }} /><span className="eye" style={{ color: 'rgba(240,245,244,.8)' }}>Your week</span></span>
           <button className="av" style={{ background: 'rgba(255,255,255,.12)', border: 0, color: '#F0F5F4' }} aria-label="Close" onClick={() => router.push('/')}><Icon name="close" /></button>
         </div>
 

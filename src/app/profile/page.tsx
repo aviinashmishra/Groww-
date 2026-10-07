@@ -5,6 +5,7 @@ import { useState } from 'react';
 import { Screen, Sheet } from '@/components/ui';
 import { STICKERS } from '@/lib/stickers';
 import { Icon } from '@/components/Icon';
+import { Avatar } from '@/components/Avatar';
 import { useStore } from '@/lib/store';
 import { LEVEL_NAME, licence } from '@/lib/logic';
 import { fmtMonthYear } from '@/lib/format';
@@ -12,7 +13,7 @@ import { fmtMonthYear } from '@/lib/format';
 export default function Profile() {
   const { state } = useStore();
   const lic = licence(state);
-  const steps = ['L-plate', 'Stocks', 'F&O'];
+  const steps = ['L-plate', 'Fun Pot', 'F&O'];
   const [open, setOpen] = useState<string | null>(null);
   const sel = STICKERS.find((s) => s.id === open);
   const got = !!sel && state.stickers.includes(sel.id);
@@ -28,7 +29,7 @@ export default function Profile() {
     <Screen orbs="a">
       <div className="row sp">
         <div className="row">
-          <div className="av">{state.name.charAt(0).toUpperCase()}</div>
+          <Avatar size={48} />
           <div className="col"><span style={{ fontWeight: 600, fontSize: 17 }}>{state.name}</span><span className="cap">Here since {fmtMonthYear(state.joinedAt)}</span></div>
         </div>
         <Link className="av" href="/profile/settings" aria-label="Settings"><Icon name="sliders" /></Link>
@@ -37,7 +38,7 @@ export default function Profile() {
       <section className="glass col" style={{ gap: 14 }}>
         <div className="plate col" style={{ gap: 14, padding: '18px 16px' }}>
           <div className="row" style={{ gap: 14 }}>
-            <div className="lp" style={{ width: 64, height: 64, borderRadius: 16, fontSize: 38, borderWidth: 2, opacity: lic.level ? 1 : 0.4 }}>L</div>
+            <div className="lp" style={{ width: 64, height: 64, opacity: lic.level ? 1 : 0.4 }} />
             <div className="col grow" style={{ gap: 2 }}>
               <span className="eye">Licence for money</span>
               <span className="h1">{LEVEL_NAME[lic.level]}</span>
@@ -67,7 +68,7 @@ export default function Profile() {
           </div>
         </div>
         <div className="col" style={{ gap: 10, padding: '0 4px' }}>
-          <span className="eye">{lic.level >= 2 ? 'How you got here' : 'The road to Stocks'}</span>
+          <span className="eye">{lic.level >= 2 ? 'How you got here' : 'The road to the Fun Pot'}</span>
           {criteria.map(([ok, label, href]) => (
             <Link key={label} href={href} className="row" style={{ minHeight: 28 }}>
               <Icon name={ok ? 'check' : 'lock'} style={{ color: ok ? 'var(--acc-ink)' : 'var(--ink3)' }} />

@@ -59,6 +59,39 @@ Or from the terminal: `npx vercel` for a preview, then `npx vercel --prod`.
 - **Quick actions** on Home: a row of colourful tiles you scroll sideways. The Chillar Jar tile shows the jar's current balance.
 - The **weekly recap** gains slides for the Chillar Jar and your money mood, and there are two new stickers: Chillar champ and Slept on it.
 
+## Made for you, kept forever
+
+- **Your own numbers from day one.** Onboarding has two steps: your name and how money reaches you, then your income, monthly spend and savings, with a live runway preview. Sample data is a single tap away if you just want to explore.
+- **Greeting and For you.** Home greets you by name for the time of day. A For you card picks the single most useful thing to do now: an incoming credit to keep or skip, a wish whose 48 hours are up, a sell you slept on, your L-plate, this month's split, the Chillar Jar, a nearly full pot, or exactly how much a month reaches your runway goal.
+- **Undo on money moves.** Adding, withdrawing, selling, sweeping, splitting, buying or dropping a wish, and deleting a pot all show a toast with an **Undo** button for 6 seconds.
+- **App lock.** A 4-digit PIN with a full-screen keypad. It asks on open and again after a minute in the background. Only a salted SHA-256 hash is stored, never the PIN. If you forget it, you can erase the data and restore a backup.
+- **Your data, forever.** Settings → *Your data*: save a JSON backup, restore it on any phone, start over (with your own numbers or sample data), or erase everything. The app also asks the browser not to evict its storage.
+- **Edit yourself.** Change your name, avatar colour, income and monthly spend at any time, and everything recalculates.
+- **Vibration on or off**, an **offline banner** ("Everything still works on this phone"), and friendly **error screens** that never lose your data and offer a rescue download.
+
+## Invest: stocks, mutual funds, SIPs and IPOs
+
+The new **Invest** tab (second in the nav) is a full investing app on a demo market. Prices move in real time during NSE hours (9:15 am to 3:30 pm IST, Monday to Friday) and freeze at the close outside them.
+
+| Flow | Route | What you can do |
+|---|---|---|
+| Hub | `/invest` | Market open or closed, four indices, your portfolio value and today's move, plus tools for orders, SIPs, IPOs and your balance. Tabs for stocks (top gainers and losers, most bought, all stocks), mutual funds (collections such as index, tax saving, low risk and high return) and your watchlist. |
+| Search | `/invest/search` | Searches stocks, indices, funds and open IPOs by name, symbol, sector or fund type. |
+| Stock | `/stocks/[id]` | Live price and a scrubbable chart (1D, 1W, 1M, 1Y, 5Y), today's range, the 52-week range, fundamentals, your holding, open orders and a watchlist star. Buy or sell at market or at a limit price, with an itemised charges breakdown (brokerage, STT, exchange, SEBI, stamp duty, GST) and slide to confirm. When the market is closed, an order goes in as an after-market order and fills at 9:15 am. Limit orders wait for your price and lapse at 3:30 pm. A buy holds back money from your balance until it fills. If you're short, the sheet offers to add exactly the difference. |
+| Mutual fund | `/mf/[id]` | NAV chart (1M to 5Y), 1Y, 3Y and 5Y returns, the riskometer, expense ratio, exit load, lock-in and top holdings. A SIP calculator. Invest one-time from your balance or by UPI, or start a SIP on the date you choose. Redeem with exit load and ELSS lock-in respected. Units are allotted at the day's NAV (3 pm cut-off) in under a minute. |
+| Portfolio | `/portfolio` | Current value, overall and daily returns, a stocks, funds and balance allocation bar, and holdings you can sort. |
+| Orders | `/orders` | Stock orders (open and history, with charges and cancel), mutual fund orders and IPO applications. |
+| SIPs | `/sips` | Monthly total, next debit, and pause, resume, change the amount or date, or stop. Missed instalments catch up the next time you open the app. |
+| Balance | `/wallet` | Add money (UPI or net banking, simulated), withdraw to your linked bank, and a ledger of every rupee in and out, including holds and releases. |
+| IPOs | `/ipo`, `/ipo/[id]` | A rolling weekly calendar. Bid by lots at the cut-off price or your own, through a UPI mandate. Retail subscription builds live, and allotment is an honest lottery (about 1 in N when retail bids N times the shares). Bidding runs Tuesday to Thursday, allotment comes the next Monday evening, and allotted shares list that Wednesday, then trade like any other stock. |
+| KYC | `/kyc` | PAN, date of birth (18+), bank account and IFSC (resolves the bank name), then three declarations. Only a masked PAN and the account's last 4 digits are kept. |
+
+**Guardrails, in the app's spirit.** Mutual funds are open to everyone after KYC. Buying single stocks needs the L-plate (hold through the 90-second Crash Simulator), and the first stock order shows "Three honest things" once. Ups and downs are written as words, never as red or green. Licence Level 2 now unlocks the **Fun Pot**, and the Fun Pot trades on the same live tape as the Invest tab.
+
+**Sample profiles** come with KYC done, a balance, holdings, SIPs with a year of history, and a watchlist. A profile made from your own numbers starts empty and unverified.
+
+The engine is `src/lib/market.ts` (sessions, prices, charts, funds, IPO calendar) and `src/lib/invest.ts` (wallet, orders, allotment, SIPs, settling). Everything is pure functions of time and state, settled every 5 seconds and on load.
+
 ## The extras
 
 - **Light and dark, one tap apart.** The sun or moon button on Home flips the theme with a circular reveal that spreads from the button. Settings has Light, Dark and Auto (follow the phone). Light is the default, and the theme is applied before the first paint, so it never flashes.
@@ -77,8 +110,9 @@ Or from the terminal: `npx vercel` for a preview, then `npx vercel --prod`.
 - **Next.js 15 App Router, React 19, TypeScript (strict).** No UI library: `src/app/globals.css` is the design's `gz.css` token system, ported as is.
 - **State** lives in `src/lib/store.tsx`: one typed `State` object, saved to `localStorage` and updated through `update(draft => …)`.
 - **Logic** (runway, licence, the Fun Pot ceiling, twin gap and the 6 pm auto-invest) is in `src/lib/logic.ts`. Seeds and demo datasets are in `src/lib/data.ts`.
+- **Market and investing**: `src/lib/market.ts` is a deterministic tape (the same prices on every device) and `src/lib/invest.ts` is the order book, wallet, SIP and IPO logic, saved in `state.invest`.
 - **Sheets** use the native `<dialog>`, which provides the focus trap, Esc to close and the backdrop.
 
 ## Demo data, honestly labelled
 
-There's no backend. Tip Check companies, tipster handles, Fun Pot stocks and prices are **fictional**. The Crash Simulator path is **shaped like** Nifty 50 history with rounded values. "Market today" is a deterministic demo value. To go live, swap in Account Aggregator for credits, exchange data for prices and tips, SEBI's public register, and a payments and KYC backend for Shagun.
+There's no backend. Tip Check companies, tipster handles, Fun Pot and Invest stocks, mutual funds, fund houses, IPOs and prices are **fictional**; index values are demo values. The Crash Simulator path is **shaped like** Nifty 50 history with rounded values. "Market today" is a deterministic demo value. To go live, swap in Account Aggregator for credits, exchange data and a broker or BSE StAR MF integration for prices, orders and tips, SEBI's public register, and a payments and KYC backend for Shagun.

@@ -2,6 +2,8 @@ import type { Metadata, Viewport } from 'next';
 import { Urbanist, Poppins } from 'next/font/google';
 import { StoreProvider } from '@/lib/store';
 import { Pwa } from '@/components/Pwa';
+import { Offline } from '@/components/Offline';
+import { PhoneFrame } from '@/components/PhoneFrame';
 import './globals.css';
 
 // Urbanist (variable 100–900, roman + italic), self-hosted by next/font from Google Fonts.
@@ -36,10 +38,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <script dangerouslySetInnerHTML={{ __html: themeScript }} />
       </head>
       <body>
-        <div className="app">
+        <PhoneFrame>
           <StoreProvider>{children}</StoreProvider>
           <Pwa />
-        </div>
+          <Offline />
+        </PhoneFrame>
       </body>
     </html>
   );

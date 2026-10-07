@@ -18,13 +18,12 @@ export function AddMoneySheet({ open, onClose, defaultAmount = 100, defaultPot, 
 
   const confirm = () => {
     if (!target || n <= 0) return;
+    const crossed = target.target > 0 && target.balance < target.target && target.balance + n >= target.target;
     update((d) => {
       addToPot(d, potId, n);
       note(d, `${rupees(n)} into ${target.name}`, 'Every rupee counts toward your runway.', `/pots/${potId}`);
-    });
-    const crossed = target.target > 0 && target.balance < target.target && target.balance + n >= target.target;
+    }, crossed ? undefined : `${rupees(n)} added to ${target.name}`);
     if (crossed) celebrate({ eyebrow: 'Pot filled', title: `${target.name} is full`, body: `${rupees(target.target)}, saved on purpose. Spend it guilt-free; that was the plan.`, icon: 'check' });
-    else toast(`${rupees(n)} added to ${target.name}`);
     onClose();
   };
 

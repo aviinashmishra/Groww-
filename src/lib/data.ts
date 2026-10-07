@@ -1,5 +1,7 @@
-import type { Bucket, Credit, Holding, Member, Move, Note, PersonaId, Pot, Spend, SpendCat, State, TipRecord } from './types';
+import type { Bucket, Credit, Holding, Member, Move, Note, OwnNumbers, PersonaId, Pot, Spend, SpendCat, State, TipRecord } from './types';
 import { daysFromNow, monthsAgo, uid } from './format';
+import { FUN_STOCK_IDS, INDICES, STOCKS as MARKET_STOCKS, quote, stockPrice } from './market';
+import { initialInvest } from './invest';
 
 /* ---------- Personas: the three Home screens on the canvas ---------- */
 
@@ -24,7 +26,7 @@ export const PERSONAS: Record<PersonaId, Persona> = {
     id: 'salary',
     label: 'First salary',
     blurb: 'A monthly salary just started landing',
-    defaultName: 'Ira',
+    defaultName: 'Avi',
     monthlyIncome: 42000,
     monthlySpend: 31500,
     monthsIn: 12,
@@ -40,7 +42,7 @@ export const PERSONAS: Record<PersonaId, Persona> = {
     id: 'student',
     label: 'Student',
     blurb: 'Pocket money, no salary yet',
-    defaultName: 'Aarav',
+    defaultName: 'Avi',
     monthlyIncome: 6000,
     monthlySpend: 6000,
     monthsIn: 2,
@@ -56,7 +58,7 @@ export const PERSONAS: Record<PersonaId, Persona> = {
     id: 'irregular',
     label: 'Irregular earner',
     blurb: 'Freelance, gigs, stipends on random dates',
-    defaultName: 'Meher',
+    defaultName: 'Avi',
     monthlyIncome: 22000,
     monthlySpend: 22000,
     monthsIn: 9,
@@ -150,29 +152,16 @@ export function findCompany(q: string): Company | undefined {
   return COMPANIES.find((c) => c.aliases.includes(s) || c.name.toLowerCase().startsWith(s) || c.aliases.some((a) => s.includes(a)));
 }
 
-/* ---------- Fun Pot: fictional large caps with demo prices ---------- */
+/* ---------- Fun Pot: fictional large caps, on the same tape as the Invest tab ---------- */
 
-export interface Stock { id: string; name: string; base: number; drift: number; phase: number }
+export type { Stock } from './market';
+export { stockPrice } from './market';
+export const STOCKS = MARKET_STOCKS.filter((s) => FUN_STOCK_IDS.includes(s.id));
 
-export const STOCKS: Stock[] = [
-  { id: 'bharatgrid', name: 'Bharat Grid Power', base: 312, drift: 0.11, phase: 0.4 },
-  { id: 'sahyadri', name: 'Sahyadri Motors', base: 1840, drift: 0.08, phase: 1.9 },
-  { id: 'indusdigital', name: 'Indus Digital', base: 1475, drift: 0.13, phase: 3.1 },
-  { id: 'ganga', name: 'Ganga Consumer', base: 2560, drift: 0.06, phase: 4.4 },
-  { id: 'deccanbank', name: 'Deccan Bank', base: 1620, drift: 0.09, phase: 5.2 },
-];
-
-export function stockPrice(s: Stock, at = new Date()): number {
-  const day = Math.floor(at.getTime() / 86400000) - 19000;
-  const p = s.base * (1 + s.drift * (day / 365) + 0.06 * Math.sin(day / 17 + s.phase) + 0.02 * Math.sin(day / 3 + s.phase * 2));
-  return Math.round(p * 100) / 100;
-}
-
-/** A deterministic "market today" move for the demo. */
+/** "Market today": the demo Nifty 50's move, in percent, to one decimal. */
 export function marketToday(at = new Date()): number {
-  const key = at.getFullYear() * 400 + at.getMonth() * 32 + at.getDate();
-  const x = Math.sin(key * 12.9898) * 43758.5453;
-  return Math.round(((x - Math.floor(x)) * 4.5 - 2.5) * 10) / 10;
+  const nifty = INDICES.find((x) => x.id === 'nifty50')!;
+  return Math.round(quote(nifty, at.getTime()).pct * 10) / 10;
 }
 
 /* ---------- F&O quiz ---------- */
@@ -259,47 +248,63 @@ function nextDecember(): string {
   return d.toISOString();
 }
 
-export function createState(persona: PersonaId, name?: string, onboarded = false): State {
+export const AVATAR_COLORS = ['#00D09C', '#7B83F0', '#F5A524', '#FF8FB1', '#3BB4F2', '#0B1A19'];
+
+/**
+ * A fresh state. With `own` numbers it starts from the user's real income, spend and
+ * savings, with no sample history; without, it loads the persona's sample data.
+ */
+export function createState(persona: PersonaId, name?: string, onboarded = false, own?: OwnNumbers): State {
   const p = PERSONAS[persona];
+  const sample = !own;
   const welcome: Note = {
     id: uid(), at: new Date().toISOString(), read: false, href: '/crash',
     title: 'Your Learner’s licence starts here',
     body: 'Ninety seconds in the Crash Simulator. Play money, real history.',
   };
+  const ownPots: Pot[] = own
+    ? [
+        pot('soon', 'soon', p.pots[0].name, 0, Math.max(1000, Math.round((own.spend * 0.5) / 500) * 500)),
+        pot('later', 'later', p.pots[1].name, 0, Math.max(5000, Math.round((own.spend * 2) / 1000) * 1000)),
+        pot('never', 'never', 'Emergency + index', Math.max(0, own.savings), Math.max(5000, Math.round((own.spend * (p.runwayUnit === 'days' ? 1 : p.runwayGoal)) / 1000) * 1000)),
+      ]
+    : p.pots.map((x) => ({ ...x }));
   return {
     v: 1,
     onboarded,
+    sample,
+    avatar: AVATAR_COLORS[Math.floor(Math.random() * 5)],
     persona,
     name: name?.trim() || p.defaultName,
-    joinedAt: monthsAgo(p.monthsIn),
-    monthlyIncome: p.monthlyIncome,
-    monthlySpend: p.monthlySpend,
-    pots: p.pots.map((x) => ({ ...x })),
+    joinedAt: sample ? monthsAgo(p.monthsIn) : new Date().toISOString(),
+    monthlyIncome: own ? own.income : p.monthlyIncome,
+    monthlySpend: own ? Math.max(1, own.spend) : p.monthlySpend,
+    pots: ownPots,
     lands: {
-      enabled: persona === 'irregular',
+      enabled: sample && persona === 'irregular',
       share: 10,
       potId: 'never',
-      history: persona === 'irregular' ? [true, true, false, true, true, true, true, false] : [],
+      history: sample && persona === 'irregular' ? [true, true, false, true, true, true, true, false] : [],
     },
-    credits: seedCredits(persona),
+    credits: sample ? seedCredits(persona) : [],
     crash: { attempts: 0, held: null },
-    twin: { moves: seedMoves(persona), pauseBeforeSell: false },
-    tips: seedTips(),
-    fun: { ...seedHoldings(persona), quizPassed: false, lossLimit: 1000, foUnlocked: false },
+    twin: { moves: sample ? seedMoves(persona) : [], pauseBeforeSell: false },
+    tips: sample ? seedTips() : [],
+    fun: { ...(sample ? seedHoldings(persona) : { cash: 0, holdings: [] }), quizPassed: false, lossLimit: 1000, foUnlocked: false },
     circle: { name: 'Hostel 4B', members: seedMembers(), goal: { name: 'Goa, December', target: 60000, deadline: nextDecember() } },
     shaguns: [],
     claimedShaguns: [],
     notes: [welcome],
     stickers: [],
     snapshots: [],
-    spends: seedSpends(persona),
-    jar: { balance: persona === 'student' ? 64 : 186, step: 10, multiplier: 1, swept: 0, on: true },
+    spends: sample ? seedSpends(persona) : [],
+    jar: { balance: sample ? (persona === 'student' ? 64 : 186) : 0, step: 10, multiplier: 1, swept: 0, on: true },
     moods: [],
     wishes: [],
-    settings: { hideAmounts: false, theme: 'light', lite: false, language: 'hinglish' },
+    settings: { hideAmounts: false, theme: 'light', lite: false, language: 'hinglish', haptics: true, lock: null },
+    invest: initialInvest(persona, sample),
   };
 }
-
 function seedSpends(p: PersonaId): Spend[] {
   const list: [string, number, SpendCat, number][] = p === 'student'
     ? [['Chai + samosa', 46, 'food', 0], ['Metro card top-up', 200, 'travel', 1], ['Maggi, hostel canteen', 64, 'food', 1], ['Notebook', 117, 'shopping', 2], ['Movie, student ticket', 180, 'fun', 3]]

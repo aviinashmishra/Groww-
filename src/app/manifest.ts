@@ -17,6 +17,7 @@ export default function manifest(): MetadataRoute.Manifest {
       { src: '/icon.svg', sizes: 'any', type: 'image/svg+xml' },
     ],
     shortcuts: [
+      { name: 'Invest', url: '/invest' },
       { name: 'Check a tip', url: '/tips' },
       { name: 'Your week', url: '/recap' },
       { name: 'Send a shagun', url: '/shagun' },

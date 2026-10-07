@@ -1,7 +1,7 @@
 import type { Language, PersonaId } from './types';
 
 type Dict = {
-  nav: { home: string; lands: string; tips: string; circles: string; profile: string };
+  nav: { home: string; invest: string; lands: string; tips: string; circles: string; profile: string };
   headline: Record<PersonaId, string>;
   runway: string;
   pots: string;
@@ -9,7 +9,7 @@ type Dict = {
 
 export const DICT: Record<Language, Dict> = {
   en: {
-    nav: { home: 'Home', lands: 'Invest what lands', tips: 'Tip Check', circles: 'Circles', profile: 'Profile' },
+    nav: { home: 'Home', invest: 'Invest', lands: 'Invest what lands', tips: 'Tip Check', circles: 'Circles', profile: 'Profile' },
     headline: {
       salary: "First salary?\nLet's split it.",
       student: 'Pocket money in?\nEven ₹100 counts.',
@@ -19,7 +19,7 @@ export const DICT: Record<Language, Dict> = {
     pots: 'Goal pots',
   },
   hinglish: {
-    nav: { home: 'Home', lands: 'Invest what lands', tips: 'Tip Check', circles: 'Circles', profile: 'Profile' },
+    nav: { home: 'Home', invest: 'Invest', lands: 'Invest what lands', tips: 'Tip Check', circles: 'Circles', profile: 'Profile' },
     headline: {
       salary: "Pehli salary?\nLet's split it.",
       student: 'Pocket money aaya?\nEven ₹100 counts.',
@@ -29,7 +29,7 @@ export const DICT: Record<Language, Dict> = {
     pots: 'Goal pots',
   },
   hi: {
-    nav: { home: 'होम', lands: 'जो आए, उसमें से निवेश', tips: 'टिप जाँच', circles: 'सर्कल', profile: 'प्रोफ़ाइल' },
+    nav: { home: 'होम', invest: 'निवेश', lands: 'जो आए, उसमें से निवेश', tips: 'टिप जाँच', circles: 'सर्कल', profile: 'प्रोफ़ाइल' },
     headline: {
       salary: 'पहली सैलरी?\nचलो बाँटें।',
       student: 'पॉकेट मनी आई?\n₹100 भी गिना जाता है।',
@@ -39,7 +39,7 @@ export const DICT: Record<Language, Dict> = {
     pots: 'लक्ष्य पॉट',
   },
   mr: {
-    nav: { home: 'होम', lands: 'जे येईल त्यातून गुंतवणूक', tips: 'टिप तपासा', circles: 'सर्कल', profile: 'प्रोफाइल' },
+    nav: { home: 'होम', invest: 'गुंतवणूक', lands: 'जे येईल त्यातून गुंतवणूक', tips: 'टिप तपासा', circles: 'सर्कल', profile: 'प्रोफाइल' },
     headline: {
       salary: 'पहिला पगार?\nचला, वाटून घेऊ.',
       student: 'पॉकेट मनी आली?\n₹100 सुद्धा मोजले जातात.',

@@ -19,8 +19,9 @@ export function Screen({ children, orbs = 'a', nav = true }: { children: ReactNo
   );
 }
 
-const TABS: { href: string; icon: IconName; key: 'home' | 'lands' | 'tips' | 'circles' | 'profile'; match: string[] }[] = [
+const TABS: { href: string; icon: IconName; key: 'home' | 'invest' | 'lands' | 'tips' | 'circles' | 'profile'; match: string[] }[] = [
   { href: '/', icon: 'home', key: 'home', match: ['/', '/pots', '/split', '/twin', '/shagun', '/notifications', '/worth', '/jar', '/learn'] },
+  { href: '/invest', icon: 'trend', key: 'invest', match: ['/invest', '/portfolio', '/stocks', '/mf', '/sips', '/orders', '/wallet', '/ipo', '/kyc'] },
   { href: '/lands', icon: 'lands', key: 'lands', match: ['/lands'] },
   { href: '/tips', icon: 'tip', key: 'tips', match: ['/tips'] },
   { href: '/circles', icon: 'circles', key: 'circles', match: ['/circles'] },

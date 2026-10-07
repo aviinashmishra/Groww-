@@ -54,8 +54,7 @@ export default function PotPage() {
       }
       d.twin.sleepUntil = undefined;
       note(d, `${rupees(amt)} out of ${p.name}`, 'Sent to your bank account.', `/pots/${p.id}`);
-    });
-    toast(`${rupees(amt)} withdrawn`);
+    }, `${rupees(amt)} withdrawn`);
     setSheet(null);
     setAmount('');
   };
@@ -204,8 +203,7 @@ function EditPotSheet({ id, onClose, onDeleted }: { id: string; onClose: () => v
         className="ghost"
         disabled={!canDelete}
         onClick={() => {
-          update((d) => { d.pots = d.pots.filter((x) => x.id !== id); if (d.lands.potId === id) d.lands.potId = d.pots[0].id; });
-          toast('Pot deleted');
+          update((d) => { d.pots = d.pots.filter((x) => x.id !== id); if (d.lands.potId === id) d.lands.potId = d.pots[0].id; }, 'Pot deleted');
           onDeleted();
         }}
       >

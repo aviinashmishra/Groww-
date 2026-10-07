@@ -69,8 +69,7 @@ export default function Worth() {
       if (id) { const x = d.wishes.find((y) => y.id === id); if (x) x.status = 'bought'; }
       else d.wishes.unshift({ id: uid(), name: what, price: amount, at: new Date().toISOString(), status: 'bought' });
       note(d, `Bought ${what}`, covered ? 'Paid from your Soon pot. Guilt-free, as planned.' : 'Enjoy it.', '/worth');
-    });
-    toast(`Enjoy the ${what}. Guilt-free.`);
+    }, `Enjoy the ${what}. Guilt-free.`);
     reset();
   };
 
@@ -147,7 +146,7 @@ export default function Worth() {
                   <Money value={x.price} />
                 </div>
                 <div className="row" style={{ gap: 6 }}>
-                  <button className="chip grow" style={{ justifyContent: 'center', height: 40 }} onClick={() => { update((d) => { const y = d.wishes.find((z) => z.id === x.id); if (y) y.status = 'dropped'; }); toast(`Dropped. ${rupees(x.price)} stays yours.`); }}>Don’t want it</button>
+                  <button className="chip grow" style={{ justifyContent: 'center', height: 40 }} onClick={() => { update((d) => { const y = d.wishes.find((z) => z.id === x.id); if (y) y.status = 'dropped'; }, `Dropped. ${rupees(x.price)} stays yours.`); }}>Don’t want it</button>
                   <button className="chip grow" style={{ justifyContent: 'center', height: 40 }} onClick={() => buy(x.id, x.price, x.name)}>{l ? 'Buy early' : 'Still want it'}</button>
                 </div>
               </div>

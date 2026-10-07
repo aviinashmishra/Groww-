@@ -1,8 +1,8 @@
 // Offline support: pages are network-first with a cached fallback; build assets are cache-first.
-const CACHE = 'gz-v1';
+const CACHE = 'gz-v2';
 
 self.addEventListener('install', (e) => {
-  e.waitUntil(caches.open(CACHE).then((c) => c.addAll(['/', '/icon.svg'])).then(() => self.skipWaiting()));
+  e.waitUntil(caches.open(CACHE).then((c) => c.addAll(['/', '/icon.svg', '/logo.png'])).then(() => self.skipWaiting()));
 });
 
 self.addEventListener('activate', (e) => {
