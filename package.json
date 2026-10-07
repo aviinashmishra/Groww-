@@ -1,0 +1,26 @@
+{
+  "name": "groww-genz",
+  "version": "1.0.0",
+  "private": true,
+  "engines": {
+    "node": ">=18.18"
+  },
+  "description": "Groww for Gen Z — working app built from the design canvas",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "next": "^15.5.4",
+    "react": "^19.1.1",
+    "react-dom": "^19.1.1"
+  },
+  "devDependencies": {
+    "@types/node": "^22.18.0",
+    "@types/react": "^19.1.12",
+    "@types/react-dom": "^19.1.9",
+    "typescript": "^5.9.2"
+  }
+}
